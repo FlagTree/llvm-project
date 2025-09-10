@@ -16,10 +16,9 @@ jobs:
     concurrency:
       group: ${{ github.workflow }}-${{ github.event.pull_request.number }}
       cancel-in-progress: true
-    if: github.repository == 'llvm/llvm-project'
     steps:
       - name: Fetch LLVM sources
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           ref: ${{ github.event.pull_request.head.sha }}
 
@@ -40,7 +39,7 @@ jobs:
       # We need to pull the script from the main branch, so that we ensure
       # we get the latest version of this script.
       - name: Fetch code formatting utils
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           repository: ${{ github.repository }}
           ref: ${{ github.base_ref }}
@@ -63,7 +62,7 @@ jobs:
           clangformat: 19.1.6
 
       - name: Setup Python env
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v6
         with:
           python-version: '3.11'
           cache: 'pip'
