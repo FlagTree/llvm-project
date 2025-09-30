@@ -18,6 +18,7 @@
 #include "mlir/Dialect/Affine/Analysis/NestedMatcher.h"
 #include "mlir/Dialect/Affine/Analysis/Utils.h"
 #include "mlir/Dialect/Affine/IR/AffineValueMap.h"
+#include "mlir/Dialect/MemRef/IR/MemRef.h"
 #include "llvm/Support/MathExtras.h"
 
 #include "llvm/Support/Debug.h"
@@ -324,7 +325,16 @@ bool mlir::affine::isContiguousAccess(Value iv, LoadOrStoreOp memoryOp,
   assert(memRefDim && "memRefDim == nullptr");
   auto memRefType = memoryOp.getMemRefType();
 
-  if (!memRefType.getLayout().isIdentity())
+  Value memRefVal = memoryOp.getMemRef();
+  bool isShared = false;
+  if (auto subviewOp = memRefVal.getDefiningOp<memref::SubViewOp>()) {
+    if (auto hintAttr =
+            subviewOp->getAttrOfType<StringAttr>("flagtree_hints")) {
+      if (hintAttr.getValue() == "shared_memory")
+        isShared = true;
+    }
+  }
+  if (!isShared && !memRefType.getLayout().isIdentity())
     return memoryOp.emitError("NYI: non-trivial layout map"), false;
 
   int uniqueVaryingIndexAlongIv = -1;
