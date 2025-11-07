@@ -219,8 +219,22 @@ FailureOr<Value> bufferization::allocateTensorForShapedValue(
   std::optional<Attribute> memorySpace = copyBufferType->getMemorySpace();
   if (!memorySpace)
     memorySpace = options.defaultMemorySpaceFn(tensorType);
-  if (memorySpace.has_value())
-    allocTensorOp.setMemorySpaceAttr(memorySpace.value());
+  if (memorySpace.has_value()) {
+    Operation *op = getOwnerOfValue(tensor);
+    auto bufferizableOp = options.dynCastBufferizableOp(op);
+    if (bufferizableOp) {
+      for (auto operand : bufferizableOp->getOperands()) {
+        if (Operation *defOp = operand.getDefiningOp()) {
+          if (auto noBuf = defOp->getAttrOfType<BoolAttr>("no_bufferize")) {
+            if (noBuf.getValue()) {
+              return allocTensorOp.getResult();
+            }
+          }
+        }
+      }
+    }
+    allocTensorOp.setMemorySpaceAttr(*memorySpace);
+  }
   return allocTensorOp.getResult();
 }
 
