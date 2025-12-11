@@ -1,3 +1,10 @@
+option(FLAGTREE_MLIR_TD_COMPAT_OLD_LLVM_VERSION
+  "Enable Ascend backend assembly format for bufferization.to_memref"
+  OFF)
+
+if(FLAGTREE_MLIR_TD_COMPAT_OLD_LLVM_VERSION)
+  add_definitions(-DFLAGTREE_MLIR_TD_COMPAT_OLD_LLVM_VERSION)
+endif()
 add_mlir_dialect(BufferizationOps bufferization)
 add_mlir_doc(BufferizationOps BufferizationOps Dialects/ -gen-dialect-doc)
 add_mlir_interface(AllocationOpInterface)
