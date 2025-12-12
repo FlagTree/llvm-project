@@ -3,7 +3,7 @@ option(FLAGTREE_MLIR_TD_COMPAT_OLD_LLVM_VERSION
   OFF)
 
 if(FLAGTREE_MLIR_TD_COMPAT_OLD_LLVM_VERSION)
-  add_definitions(-DFLAGTREE_MLIR_TD_COMPAT_OLD_LLVM_VERSION)
+  list(APPEND LLVM_TABLEGEN_FLAGS "-DFLAGTREE_MLIR_TD_COMPAT_OLD_LLVM_VERSION")
 endif()
 add_mlir_dialect(BufferizationOps bufferization)
 add_mlir_doc(BufferizationOps BufferizationOps Dialects/ -gen-dialect-doc)
