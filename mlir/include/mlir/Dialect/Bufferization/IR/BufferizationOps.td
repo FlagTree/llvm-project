@@ -488,6 +488,7 @@ def Bufferization_ToTensorOp : Bufferization_Op<"to_tensor", [
     $memref (`restrict` $restrict^)? (`writable` $writable^)? attr-dict
       `:` type($memref) `to` type($result)
   }];
+
   let builders = [
     OpBuilder<(ins "Value":$memref, CArg<"bool", "false">:$restrict, CArg<"bool", "false">:$writeable), [{
       auto rtt = memref::getTensorTypeFromMemRefType(memref.getType());
@@ -495,6 +496,7 @@ def Bufferization_ToTensorOp : Bufferization_Op<"to_tensor", [
     }]>
   ];
 #endif
+
   let hasCanonicalizer = 1;
   let hasFolder = 1;
 }
@@ -579,6 +581,7 @@ def Bufferization_ToMemrefOp : Bufferization_Op<"to_memref", [
     $tensor (`read_only` $read_only^)? attr-dict `:` type($tensor) `to` type($memref)
   }];
   #endif
+
   let hasFolder = 1;
   let hasCanonicalizer = 1;
 }
