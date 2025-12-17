@@ -387,7 +387,13 @@ def Bufferization_ToTensorOp : Bufferization_Op<"to_tensor", [
     BufferizableOpInterface,
     SameOperandsAndResultShape,
     SameOperandsAndResultElementType,
+#ifdef FLAGTREE_MLIR_TD_COMPAT_OLD_LLVM_VERSION
+    TypesMatchWith<"result type matches tensor equivalent of 'memref'",
+                   "memref", "result",
+                   "memref::getTensorTypeFromMemRefType($_self)">
+#else
     AllElementTypesMatch<["memref", "result"]>
+#endif
   ]> {
   let summary = "create a tensor from a `memref`";
   let description = [{
@@ -472,6 +478,12 @@ def Bufferization_ToTensorOp : Bufferization_Op<"to_tensor", [
     }
   }];
 
+#ifdef FLAGTREE_MLIR_TD_COMPAT_OLD_LLVM_VERSION
+  let assemblyFormat = [{
+    $memref (`restrict` $restrict^)? (`writable` $writable^)? attr-dict
+      `:` type($memref)
+  }];
+#else
   let assemblyFormat = [{
     $memref (`restrict` $restrict^)? (`writable` $writable^)? attr-dict
       `:` type($memref) `to` type($result)
@@ -483,6 +495,7 @@ def Bufferization_ToTensorOp : Bufferization_Op<"to_tensor", [
       build($_builder, $_state, rtt, memref, restrict, writeable);
     }]>
   ];
+#endif
 
   let hasCanonicalizer = 1;
   let hasFolder = 1;
@@ -498,8 +511,14 @@ def Bufferization_ToMemrefOp : Bufferization_Op<"to_memref", [
     SameOperandsAndResultShape,
     SameOperandsAndResultElementType,
     Pure,
+#ifdef FLAGTREE_MLIR_TD_COMPAT_OLD_LLVM_VERSION
+    TypesMatchWith<"type of 'tensor' is the tensor equivalent of 'memref'",
+                  "memref", "tensor",
+                  "memref::getTensorTypeFromMemRefType($_self)">
+#else
     AllShapesMatch<["memref", "tensor"]>,
     AllElementTypesMatch<["memref", "tensor"]>
+#endif
   ]> {
   let summary = "cast a tensor to memref";
   let description = [{
@@ -553,9 +572,15 @@ def Bufferization_ToMemrefOp : Bufferization_Op<"to_memref", [
                             const BufferizationOptions &options);
   }];
 
+  #ifdef FLAGTREE_MLIR_TD_COMPAT_OLD_LLVM_VERSION
+  let assemblyFormat = [{
+    $tensor (`read_only` $read_only^)? attr-dict `:` type($memref)
+  }];
+  #else
   let assemblyFormat = [{
     $tensor (`read_only` $read_only^)? attr-dict `:` type($tensor) `to` type($memref)
   }];
+  #endif
 
   let hasFolder = 1;
   let hasCanonicalizer = 1;
