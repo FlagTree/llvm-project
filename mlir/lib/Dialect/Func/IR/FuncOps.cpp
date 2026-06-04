@@ -33,6 +33,26 @@ using namespace mlir::func;
 // FuncDialect
 //===----------------------------------------------------------------------===//
 
+struct FuncDialectVersion : public DialectVersion {
+  FuncDialectVersion(uint64_t version) : version(version) {}
+  uint64_t version;
+};
+
+struct FuncBytecodeInterface : public BytecodeDialectInterface {
+  FuncBytecodeInterface(Dialect *dialect) : BytecodeDialectInterface(dialect) {}
+
+  void writeVersion(DialectBytecodeWriter &writer) const override {
+    writer.writeVarInt(351); 
+    return;
+  }
+
+  std::unique_ptr<DialectVersion> readVersion(DialectBytecodeReader &reader) const override {
+    uint64_t version;
+    if (failed(reader.readVarInt(version))) return nullptr;
+    return std::make_unique<FuncDialectVersion>(version);
+  }
+};
+
 void FuncDialect::initialize() {
   addOperations<
 #define GET_OP_LIST
@@ -43,6 +63,7 @@ void FuncDialect::initialize() {
   declarePromisedInterface<ConvertToLLVMPatternInterface, FuncDialect>();
   declarePromisedInterfaces<bufferization::BufferizableOpInterface, CallOp,
                             FuncOp, ReturnOp>();
+  addInterfaces<FuncBytecodeInterface>();
 }
 
 /// Materialize a single constant operation from a given attribute value with
@@ -279,6 +300,89 @@ FuncOp FuncOp::clone() {
   return clone(mapper);
 }
 
+::llvm::LogicalResult FuncOp::readProperties(DialectBytecodeReader &reader, 
+                                                        OperationState &state) {
+  auto &prop = state.getOrAddProperties<Properties>(); (void)prop;
+
+  // 1. arg_attrs
+  if (failed(reader.readOptionalAttribute(prop.arg_attrs)))
+    return failure();
+
+  // 2. function_type
+  if (failed(reader.readAttribute(prop.function_type)))
+    return failure();
+
+  // --- 关键修改：版本感知的 no_inline 读取 ---
+  // 1. 移除 auto 后面的星号，因为返回的是 FailureOr 包装类
+  auto versionOr = reader.getDialectVersion<FuncDialect>();
+  
+  uint64_t version = 0;
+  // 2. 检查是否读取成功，并且返回的指针不为空
+  if (succeeded(versionOr) && *versionOr) {
+    // 3. 使用 *versionOr 获取内部的 const DialectVersion*，再进行类型转换
+    version = static_cast<const FuncDialectVersion *>(*versionOr)->version;
+  }
+
+  if (version >= 1) {
+    // 只有新版文件才读取这 1 字节
+    if (failed(reader.readOptionalAttribute(prop.no_inline)))
+      return failure();
+  } else {
+    // 旧版文件没有这个属性，设为默认值（false），不移动指针
+    prop.no_inline = nullptr; 
+  }
+
+  // 3. res_attrs (字母 r)
+  if (failed(reader.readOptionalAttribute(prop.res_attrs)))
+    return failure();
+
+  // 4. sym_name (字母 s)
+  if (failed(reader.readAttribute(prop.sym_name)))
+    return failure();
+
+  // 5. sym_visibility
+  if (failed(reader.readOptionalAttribute(prop.sym_visibility)))
+    return failure();
+
+  return success();
+}
+
+
+void FuncOp::writeProperties(DialectBytecodeWriter &writer) {
+  auto &prop = getProperties(); (void)prop;
+
+  writer.writeOptionalAttribute(prop.arg_attrs);
+  writer.writeAttribute(prop.function_type);
+
+  writer.writeOptionalAttribute(prop.res_attrs);
+  writer.writeAttribute(prop.sym_name);
+  writer.writeOptionalAttribute(prop.sym_visibility);
+}
+
+::llvm::LogicalResult CallOp::readProperties(DialectBytecodeReader &reader, OperationState &state) {
+  auto &prop = state.getOrAddProperties<Properties>(); (void)prop;
+
+  // 读取必需的 "callee" 属性
+  if (failed(reader.readAttribute(prop.callee)))
+    return failure();
+
+  if (failed(reader.readOptionalAttribute(prop.arg_attrs)))
+    return failure();
+
+  if (failed(reader.readOptionalAttribute(prop.res_attrs)))
+    return failure();
+  
+  return success();
+}
+
+void CallOp::writeProperties(DialectBytecodeWriter &writer) {
+  auto &prop = getProperties(); (void)prop;
+
+  writer.writeAttribute(prop.callee);
+
+  // writer.writeOptionalAttribute(prop.arg_attrs);
+  // writer.writeOptionalAttribute(prop.res_attrs);
+}
 //===----------------------------------------------------------------------===//
 // ReturnOp
 //===----------------------------------------------------------------------===//

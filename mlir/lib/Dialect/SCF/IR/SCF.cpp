@@ -315,6 +315,18 @@ void ConditionOp::getSuccessorRegions(
 //===----------------------------------------------------------------------===//
 // ForOp
 //===----------------------------------------------------------------------===//
+::llvm::LogicalResult ForOp::readProperties(::mlir::DialectBytecodeReader &reader, ::mlir::OperationState &state) {
+  // auto &prop = state.getOrAddProperties<Properties>(); (void)prop;
+  // if (::mlir::failed(reader.readOptionalAttribute(prop.unsignedCmp)))
+    // return ::mlir::failure();
+  return ::mlir::success();
+}
+
+void ForOp::writeProperties(::mlir::DialectBytecodeWriter &writer) {
+  // auto &prop = getProperties(); (void)prop;
+
+  // writer.writeOptionalAttribute(prop.unsignedCmp);
+}
 
 void ForOp::build(OpBuilder &builder, OperationState &result, Value lb,
                   Value ub, Value step, ValueRange initArgs,

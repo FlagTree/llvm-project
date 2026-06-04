@@ -554,7 +554,7 @@ def LLVM_AssumeOp
                         $op_bundle_tags)^ )?
     `:` type($cond) attr-dict
   }];
-
+  let useCustomPropertiesEncoding = 1;
   let builders = [
     OpBuilder<(ins "Value":$cond)>,
     OpBuilder<(ins "Value":$cond, "llvm::StringRef":$tag, "ValueRange":$args)>,

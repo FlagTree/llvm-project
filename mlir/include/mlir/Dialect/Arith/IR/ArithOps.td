@@ -1317,6 +1317,7 @@ def Arith_TruncIOp : Arith_Op<"trunci",
   let hasFolder = 1;
   let hasCanonicalizer = 1;
   let hasVerifier = 1;
+  let useCustomPropertiesEncoding = 1;
 }
 
 //===----------------------------------------------------------------------===//

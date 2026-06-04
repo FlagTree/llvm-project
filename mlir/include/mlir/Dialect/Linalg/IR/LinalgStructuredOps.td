@@ -775,6 +775,7 @@ def MatmulOp : LinalgStructuredBase_Op<"matmul", [
 
     ];
     let hasCustomAssemblyFormat = 1;
+    let useCustomPropertiesEncoding = 1;
     let hasFolder = 1;
     let hasVerifier = 1;
 
@@ -1045,6 +1046,7 @@ def BatchMatmulOp : LinalgStructuredBase_Op<"batch_matmul", !listconcat([AttrSiz
       
     ];
     let hasCustomAssemblyFormat = 1;
+    let useCustomPropertiesEncoding = 1;
     let hasFolder = 1;
     let hasVerifier = 1;
 

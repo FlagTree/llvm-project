@@ -203,6 +203,110 @@ static void buildMatmulOp(OpBuilder &b, OperationState &state,
                            attributes, regionBuilder);
 }
 
+::llvm::LogicalResult MatmulOp::readProperties(::mlir::DialectBytecodeReader &reader, ::mlir::OperationState &state) {
+  auto &prop = state.getOrAddProperties<Properties>(); (void)prop;
+  if (::mlir::failed(reader.readOptionalAttribute(prop.cast)))
+    return ::mlir::failure();
+
+  if (::mlir::failed(reader.readOptionalAttribute(prop.indexing_maps)))
+    return ::mlir::failure();
+
+  if (reader.getBytecodeVersion() < /*kNativePropertiesODSSegmentSize=*/6) {
+    auto &propStorage = prop.operandSegmentSizes;
+    ::mlir::DenseI32ArrayAttr attr;
+    if (::mlir::failed(reader.readAttribute(attr))) return ::mlir::failure();
+    if (attr.size() > static_cast<int64_t>(sizeof(propStorage) / sizeof(int32_t))) {
+      reader.emitError("size mismatch for operand/result_segment_size");
+      return ::mlir::failure();
+    }
+    ::llvm::copy(::llvm::ArrayRef<int32_t>(attr), propStorage.begin());
+  }
+
+  {
+    auto &propStorage = prop.operandSegmentSizes;
+    auto readProp = [&]() {
+
+  if (reader.getBytecodeVersion() >= /*kNativePropertiesODSSegmentSize=*/6)
+    return reader.readSparseArray(::llvm::MutableArrayRef(propStorage));
+;
+      return ::mlir::success();
+    };
+    if (::mlir::failed(readProp())) 
+      return ::mlir::failure();
+  }
+  return ::mlir::success();
+}
+
+void MatmulOp::writeProperties(::mlir::DialectBytecodeWriter &writer) {
+  auto &prop = getProperties(); (void)prop;
+
+  writer.writeOptionalAttribute(prop.cast);
+
+if (writer.getBytecodeVersion() < /*kNativePropertiesODSSegmentSize=*/6) {
+  auto &propStorage = prop.operandSegmentSizes;
+  writer.writeAttribute(::mlir::DenseI32ArrayAttr::get(this->getContext(), propStorage));
+}
+
+  {
+    auto &propStorage = prop.operandSegmentSizes;
+
+  if (writer.getBytecodeVersion() >= /*kNativePropertiesODSSegmentSize=*/6)
+    writer.writeSparseArray(::llvm::ArrayRef(propStorage));
+;
+  }
+}
+
+::llvm::LogicalResult BatchMatmulOp::readProperties(::mlir::DialectBytecodeReader &reader, ::mlir::OperationState &state) {
+  auto &prop = state.getOrAddProperties<Properties>(); (void)prop;
+  if (::mlir::failed(reader.readOptionalAttribute(prop.cast)))
+    return ::mlir::failure();
+
+  if (::mlir::failed(reader.readOptionalAttribute(prop.indexing_maps)))
+    return ::mlir::failure();
+
+  if (reader.getBytecodeVersion() < /*kNativePropertiesODSSegmentSize=*/6) {
+    auto &propStorage = prop.operandSegmentSizes;
+    ::mlir::DenseI32ArrayAttr attr;
+    if (::mlir::failed(reader.readAttribute(attr))) return ::mlir::failure();
+    if (attr.size() > static_cast<int64_t>(sizeof(propStorage) / sizeof(int32_t))) {
+      reader.emitError("size mismatch for operand/result_segment_size");
+      return ::mlir::failure();
+    }
+    ::llvm::copy(::llvm::ArrayRef<int32_t>(attr), propStorage.begin());
+  }
+
+  {
+    auto &propStorage = prop.operandSegmentSizes;
+    auto readProp = [&]() {
+
+  if (reader.getBytecodeVersion() >= /*kNativePropertiesODSSegmentSize=*/6)
+    return reader.readSparseArray(::llvm::MutableArrayRef(propStorage));
+;
+      return ::mlir::success();
+    };
+    if (::mlir::failed(readProp()))
+      return ::mlir::failure();
+  }
+  return ::mlir::success();
+}
+
+void BatchMatmulOp::writeProperties(::mlir::DialectBytecodeWriter &writer) {
+  auto &prop = getProperties(); (void)prop;
+
+if (writer.getBytecodeVersion() < /*kNativePropertiesODSSegmentSize=*/6) {
+  auto &propStorage = prop.operandSegmentSizes;
+  writer.writeAttribute(::mlir::DenseI32ArrayAttr::get(this->getContext(), propStorage));
+}
+
+  {
+    auto &propStorage = prop.operandSegmentSizes;
+
+  if (writer.getBytecodeVersion() >= /*kNativePropertiesODSSegmentSize=*/6)
+    writer.writeSparseArray(::llvm::ArrayRef(propStorage));
+;
+  }
+}
+
 static void buildBatchMatmulOp(OpBuilder &b, OperationState &state,
                                std::optional<TypeRange> resultTensorTypes,
                                ValueRange inputs, ValueRange outputs,

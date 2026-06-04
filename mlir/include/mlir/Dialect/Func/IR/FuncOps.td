@@ -122,6 +122,8 @@ def CallOp : Func_Op<"call",
   let assemblyFormat = [{
     $callee `(` $operands `)` attr-dict `:` functional-type($operands, results)
   }];
+
+  let useCustomPropertiesEncoding = 1;
 }
 
 //===----------------------------------------------------------------------===//
@@ -357,6 +359,7 @@ def FuncOp : Func_Op<"func", [
     bool isDeclaration() { return isExternal(); }
   }];
   let hasCustomAssemblyFormat = 1;
+  let useCustomPropertiesEncoding = 1;
 }
 
 //===----------------------------------------------------------------------===//

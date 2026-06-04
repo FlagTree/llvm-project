@@ -4114,6 +4114,14 @@ void LLVM::AssumeOp::build(OpBuilder &builder, OperationState &state,
 
 LogicalResult LLVM::AssumeOp::verify() { return verifyOperandBundles(*this); }
 
+::llvm::LogicalResult AssumeOp::readProperties(::mlir::DialectBytecodeReader &reader, ::mlir::OperationState &state) {
+  return ::mlir::success();
+}
+
+void AssumeOp::writeProperties(::mlir::DialectBytecodeWriter &writer) {
+  return;
+}
+
 //===----------------------------------------------------------------------===//
 // masked_gather (intrinsic)
 //===----------------------------------------------------------------------===//

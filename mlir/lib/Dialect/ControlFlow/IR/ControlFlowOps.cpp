@@ -458,6 +458,57 @@ Block *CondBranchOp::getSuccessorForOperands(ArrayRef<Attribute> operands) {
   return nullptr;
 }
 
+::llvm::LogicalResult CondBranchOp::readProperties(::mlir::DialectBytecodeReader &reader, ::mlir::OperationState &state) {
+  auto &prop = state.getOrAddProperties<Properties>(); (void)prop;
+  if (::mlir::failed(reader.readOptionalAttribute(prop.branch_weights)))
+    return ::mlir::failure();
+
+  if (reader.getBytecodeVersion() < /*kNativePropertiesODSSegmentSize=*/6) {
+    auto &propStorage = prop.operandSegmentSizes;
+    ::mlir::DenseI32ArrayAttr attr;
+    if (::mlir::failed(reader.readAttribute(attr))) return ::mlir::failure();
+    if (attr.size() > static_cast<int64_t>(sizeof(propStorage) / sizeof(int32_t))) {
+      reader.emitError("size mismatch for operand/result_segment_size");
+      return ::mlir::failure();
+    }
+    ::llvm::copy(::llvm::ArrayRef<int32_t>(attr), propStorage.begin());
+  }
+
+  {
+    auto &propStorage = prop.operandSegmentSizes;
+    auto readProp = [&]() {
+
+  if (reader.getBytecodeVersion() >= /*kNativePropertiesODSSegmentSize=*/6)
+    return reader.readSparseArray(::llvm::MutableArrayRef(propStorage));
+;
+      return ::mlir::success();
+    };
+    if (::mlir::failed(readProp()))
+      return ::mlir::failure();
+  }
+  return ::mlir::success();
+}
+
+void CondBranchOp::writeProperties(::mlir::DialectBytecodeWriter &writer) {
+  auto &prop = getProperties(); (void)prop;
+
+  // writer.writeOptionalAttribute(prop.branch_weights);
+
+if (writer.getBytecodeVersion() < /*kNativePropertiesODSSegmentSize=*/6) {
+  auto &propStorage = prop.operandSegmentSizes;
+  writer.writeAttribute(::mlir::DenseI32ArrayAttr::get(this->getContext(), propStorage));
+}
+
+  {
+    auto &propStorage = prop.operandSegmentSizes;
+
+  if (writer.getBytecodeVersion() >= /*kNativePropertiesODSSegmentSize=*/6)
+    writer.writeSparseArray(::llvm::ArrayRef(propStorage));
+;
+  }
+}
+
+
 //===----------------------------------------------------------------------===//
 // SwitchOp
 //===----------------------------------------------------------------------===//

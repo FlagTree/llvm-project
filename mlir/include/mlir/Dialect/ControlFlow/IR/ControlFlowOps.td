@@ -233,6 +233,7 @@ def CondBranchOp
     $falseDest (`(` $falseDestOperands^ `:` type($falseDestOperands) `)`)?
     attr-dict
   }];
+  let useCustomPropertiesEncoding = 1;
 }
 
 //===----------------------------------------------------------------------===//

@@ -98,6 +98,25 @@ struct BuiltinMemRefExternalModel
 //===----------------------------------------------------------------------===//
 // Bufferization Dialect
 //===----------------------------------------------------------------------===//
+struct BufferizationDialectVersion : public DialectVersion {
+  BufferizationDialectVersion(uint64_t version) : version(version) {}
+  uint64_t version;
+};
+
+struct BufferizationBytecodeInterface : public BytecodeDialectInterface {
+  BufferizationBytecodeInterface(Dialect *dialect) : BytecodeDialectInterface(dialect) {}
+
+  void writeVersion(DialectBytecodeWriter &writer) const override {
+    writer.writeVarInt(351); 
+    return;
+  }
+
+  std::unique_ptr<DialectVersion> readVersion(DialectBytecodeReader &reader) const override {
+    uint64_t version;
+    if (failed(reader.readVarInt(version))) return nullptr;
+    return std::make_unique<BufferizationDialectVersion>(version);
+  }
+};
 
 void mlir::bufferization::BufferizationDialect::initialize() {
   addOperations<
@@ -119,6 +138,7 @@ void mlir::bufferization::BufferizationDialect::initialize() {
       *getContext());
   UnrankedMemRefType::attachInterface<
       BuiltinMemRefExternalModel<UnrankedMemRefType>>(*getContext());
+   addInterfaces<BufferizationBytecodeInterface>();
 }
 
 LogicalResult BufferizationDialect::verifyRegionArgAttribute(

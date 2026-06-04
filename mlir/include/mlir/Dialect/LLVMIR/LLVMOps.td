@@ -457,6 +457,60 @@ def LLVM_LoadOp : LLVM_MemAccessOpBase<"load",
       CArg<"StringRef", "StringRef()">:$syncscope)>
   ];
   let hasVerifier = 1;
+  // TODO: remove following patch when upgrade to LLVM 22
+  let useCustomPropertiesEncoding = 1;
+  let extraClassDefinition = [{
+    void $cppClass::writeProperties(mlir::DialectBytecodeWriter &writer) {
+      // do nothing, this is just an implementation for BytecodeOpInterface
+    }
+
+    mlir::LogicalResult $cppClass::readProperties(mlir::DialectBytecodeReader &reader,
+                                       mlir::OperationState &state) {
+      // Skip the dereferenceable/invariantGroup attributes generated in LLVM22
+      // as they do not exist in LLVM19. These attributes are stored after alignment.
+      mlir::Attribute attr;
+      auto &prop = state.getOrAddProperties<Properties>(); (void)prop;
+      if (::mlir::failed(reader.readOptionalAttribute(prop.access_groups)))
+        return ::mlir::failure();
+
+      if (::mlir::failed(reader.readOptionalAttribute(prop.alias_scopes)))
+        return ::mlir::failure();
+
+      if (::mlir::failed(reader.readOptionalAttribute(prop.alignment)))
+        return ::mlir::failure();
+
+      // Skip dereferenceable (stored after alignment in LLVM22)
+      if (mlir::failed(reader.readOptionalAttribute(attr)))
+        return mlir::failure();
+
+      if (::mlir::failed(reader.readOptionalAttribute(prop.invariant)))
+        return ::mlir::failure();
+
+      // Skip invariantGroup (stored after invariant in LLVM22)
+      if (mlir::failed(reader.readOptionalAttribute(attr)))
+        return mlir::failure();
+
+      if (::mlir::failed(reader.readOptionalAttribute(prop.noalias_scopes)))
+        return ::mlir::failure();
+
+      if (::mlir::failed(reader.readOptionalAttribute(prop.nontemporal)))
+        return ::mlir::failure();
+
+      if (::mlir::failed(reader.readOptionalAttribute(prop.ordering)))
+        return ::mlir::failure();
+
+      if (::mlir::failed(reader.readOptionalAttribute(prop.syncscope)))
+        return ::mlir::failure();
+
+      if (::mlir::failed(reader.readOptionalAttribute(prop.tbaa)))
+        return ::mlir::failure();
+
+      if (::mlir::failed(reader.readOptionalAttribute(prop.volatile_)))
+        return ::mlir::failure();
+
+      return mlir::success();
+    }
+  }];
 }
 
 def LLVM_StoreOp : LLVM_MemAccessOpBase<"store",
@@ -534,6 +588,54 @@ def LLVM_StoreOp : LLVM_MemAccessOpBase<"store",
       CArg<"StringRef", "StringRef()">:$syncscope)>
   ];
   let hasVerifier = 1;
+  // TODO: remove following patch when upgrade to LLVM 22
+  let useCustomPropertiesEncoding = 1;
+  let extraClassDefinition = [{
+    void $cppClass::writeProperties(mlir::DialectBytecodeWriter &writer) {
+      // do nothing, this is just an implementation for BytecodeOpInterface
+    }
+
+    mlir::LogicalResult $cppClass::readProperties(mlir::DialectBytecodeReader &reader,
+                                       mlir::OperationState &state) {
+      // Skip the invariantGroup attribute generated in LLVM22
+      // as it does not exist in LLVM19. This attribute is stored after alignment.
+      mlir::Attribute attr;
+      auto &prop = state.getOrAddProperties<Properties>(); (void)prop;
+      if (::mlir::failed(reader.readOptionalAttribute(prop.access_groups)))
+        return ::mlir::failure();
+
+      if (::mlir::failed(reader.readOptionalAttribute(prop.alias_scopes)))
+        return ::mlir::failure();
+
+      if (::mlir::failed(reader.readOptionalAttribute(prop.alignment)))
+        return ::mlir::failure();
+
+      // Skip invariantGroup (stored after alignment in LLVM22)
+      if (mlir::failed(reader.readOptionalAttribute(attr)))
+        return mlir::failure();
+
+      if (::mlir::failed(reader.readOptionalAttribute(prop.noalias_scopes)))
+        return ::mlir::failure();
+
+      if (::mlir::failed(reader.readOptionalAttribute(prop.nontemporal)))
+        return ::mlir::failure();
+
+      if (::mlir::failed(reader.readOptionalAttribute(prop.ordering)))
+        return ::mlir::failure();
+
+      if (::mlir::failed(reader.readOptionalAttribute(prop.syncscope)))
+        return ::mlir::failure();
+
+      if (::mlir::failed(reader.readOptionalAttribute(prop.tbaa)))
+        return ::mlir::failure();
+
+      if (::mlir::failed(reader.readOptionalAttribute(prop.volatile_)))
+        return ::mlir::failure();
+
+      return mlir::success();
+    }
+  }];
+
 }
 
 // Casts.

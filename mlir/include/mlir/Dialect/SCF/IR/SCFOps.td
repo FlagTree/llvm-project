@@ -309,6 +309,7 @@ def ForOp : SCF_Op<"for",
 
   let hasCanonicalizer = 1;
   let hasCustomAssemblyFormat = 1;
+  let useCustomPropertiesEncoding = 1;
   let hasVerifier = 1;
   let hasRegionVerifier = 1;
 }

@@ -1560,6 +1560,16 @@ LogicalResult arith::ScalingExtFOp::verify() {
 //===----------------------------------------------------------------------===//
 // TruncIOp
 //===----------------------------------------------------------------------===//
+::llvm::LogicalResult TruncIOp::readProperties(::mlir::DialectBytecodeReader &reader, ::mlir::OperationState &state) {
+  auto &prop = state.getOrAddProperties<Properties>(); (void)prop;
+  if (::mlir::failed(reader.readOptionalAttribute(prop.overflowFlags)))
+    return ::mlir::failure();
+  return ::mlir::success();
+}
+
+void TruncIOp::writeProperties(::mlir::DialectBytecodeWriter &writer) {
+  return;
+}
 
 OpFoldResult arith::TruncIOp::fold(FoldAdaptor adaptor) {
   if (matchPattern(getOperand(), m_Op<arith::ExtUIOp>()) ||
